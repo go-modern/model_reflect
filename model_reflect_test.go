@@ -48,7 +48,7 @@ func TestModelReflect(t *testing.T) {
 	id = model.Hash()
 	// testStruct := &testStruct2{}
 	t.Logf("TestModelReflect: (%d) %s [%v]", id, model, err)
-	if id != 1477757107204506730 {
+	if id != 16467460592838678187 {
 		t.Error("test")
 	}
 }
@@ -58,7 +58,7 @@ type testA struct {
 	// X *testB
 	// B testB
 	*testB
-	// *testA
+	X *testB
 }
 
 type testB struct {
@@ -70,7 +70,7 @@ func TestModelReflectRecursive(t *testing.T) {
 	model, err := model_reflect.New((*testA)(nil))
 	id := model.Hash()
 	t.Logf("TestModelReflectRecursive: (%d) %s [%v]", id, model, err)
-	if id != 6506341977905485284 {
+	if id != 879603111333480357 {
 		t.Error("test")
 	}
 }

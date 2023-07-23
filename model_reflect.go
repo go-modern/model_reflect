@@ -104,12 +104,27 @@ func baseType(t reflect.Type) reflect.Type {
 	return t
 }
 
-func isConcrete(t reflect.Type) bool {
+func checkInterfaces(t reflect.Type) []string {
+	result := []string{}
+	for _, iface := range DefaultInterfaces {
+		if reflect.PtrTo(t).Implements(iface) {
+			result = append(result, iface.String())
+		}
+	}
+	sort.Strings(result)
+	return result
+}
+
+func isConcrete(t reflect.Type) ([]string, bool) {
+	interfaces := checkInterfaces(t)
+	if len(interfaces) > 0 {
+		return interfaces, true
+	}
 	switch t.Kind() {
 	case reflect.Pointer, reflect.UnsafePointer, reflect.Interface, reflect.Func, reflect.Chan:
-		return false
+		return nil, false
 	default:
-		return true
+		return nil, true
 	}
 }
 
@@ -173,31 +188,26 @@ func structFields(t reflect.Type) ([]reflect.StructField, []error) {
 	return result, errs
 }
 
-func checkInterfaces(t reflect.Type) []string {
-	result := []string{}
-	for _, iface := range DefaultInterfaces {
-		if reflect.PtrTo(t).Implements(iface) {
-			result = append(result, iface.String())
-		}
-	}
-	sort.Strings(result)
-	return result
-}
-
 func typeToString(t reflect.Type, types []reflect.Type, errs *[]error) string {
-	if t != nil {
-		t = baseType(t)
+	if t == nil {
+		return "<nil>"
 	}
-	if t == nil || !isConcrete(t) {
-		return "?"
-	}
+	t = baseType(t)
 
 	idx := slices.Index(types, t)
 	if idx >= 0 {
 		*errs = append(*errs, fmt.Errorf("%w in %s", ErrLoopDetected, t))
-		return "..."
+		return "<...>"
 	}
 	types = append(types, t)
+
+	interfaces, ok := isConcrete(t)
+	if len(interfaces) > 0 {
+		return "<" + strings.Join(interfaces, ",") + ">"
+	}
+	if !ok {
+		return "<?>"
+	}
 
 	switch t.Kind() {
 	case reflect.Slice:
@@ -219,10 +229,6 @@ func typeToString(t reflect.Type, types []reflect.Type, errs *[]error) string {
 	default:
 		return t.Kind().String()
 	}
-	interfaces := checkInterfaces(t)
-	if len(interfaces) > 0 {
-		return "(" + strings.Join(interfaces, ",") + ")"
-	}
 
 	fields, e := structFields(t)
 	if errs != nil && len(e) > 0 {
@@ -235,7 +241,7 @@ func typeToString(t reflect.Type, types []reflect.Type, errs *[]error) string {
 		if !f.IsExported() {
 			continue
 		}
-		if !isConcrete(baseType(f.Type)) {
+		if _, ok := isConcrete(baseType(f.Type)); !ok {
 			continue
 		}
 		name := f.Name
