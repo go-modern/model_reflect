@@ -52,6 +52,12 @@ var (
 	ErrEmptyStruct = errors.New("empty struct")
 	// ErrDuplicate is returned when a struct has duplicate fields.
 	ErrDuplicate = errors.New("duplicate fields")
+
+	DefaultNameTags = []string{
+		"json",
+		"msgpack",
+		"cbor",
+	}
 )
 
 // New returns a new ModelInfo.
@@ -152,6 +158,16 @@ func expandField(f reflect.StructField, types []reflect.Type, result *[][]reflec
 	return errs
 }
 
+func getName(f reflect.StructField) string {
+	for _, tag := range DefaultNameTags {
+		name := strings.Split(f.Tag.Get(tag), ",")[0]
+		if name != "" {
+			return strings.ToUpper(name[0:1]) + name[1:]
+		}
+	}
+	return f.Name
+}
+
 func structFields(t reflect.Type) ([]reflect.StructField, []error) {
 	if t.Kind() != reflect.Struct {
 		return nil, nil
@@ -168,20 +184,22 @@ func structFields(t reflect.Type) ([]reflect.StructField, []error) {
 		localCounts := map[string]int{}
 		localIgnore := map[string]bool{}
 		for _, f := range level {
-			counts[f.Name]++
-			localCounts[f.Name]++
+			name := getName(f)
+			counts[name]++
+			localCounts[name]++
 		}
 		for _, f := range level {
 			if f.Tag.Get("reflect") == "-" {
 				continue
 			}
-			if counts[f.Name] == 1 {
+			name := getName(f)
+			if counts[name] == 1 {
 				result = append(result, f)
 			}
-			if !localIgnore[f.Name] && localCounts[f.Name] > 1 {
+			if !localIgnore[name] && localCounts[name] > 1 {
 				errs = append(errs, fmt.Errorf("type %s (embed level %d): %w [%d]%s",
-					t, i, ErrDuplicate, localCounts[f.Name], f.Name))
-				localIgnore[f.Name] = true
+					t, i, ErrDuplicate, localCounts[name], name))
+				localIgnore[name] = true
 			}
 		}
 	}
@@ -244,7 +262,7 @@ func typeToString(t reflect.Type, types []reflect.Type, errs *[]error) string {
 		if _, ok := isConcrete(baseType(f.Type)); !ok {
 			continue
 		}
-		name := f.Name
+		name := getName(f)
 		if f.Anonymous {
 			name = "." + name
 		}
@@ -263,7 +281,7 @@ func typeToString(t reflect.Type, types []reflect.Type, errs *[]error) string {
 	for i, name := range keys {
 		f := fieldMap[name]
 		if !f.Anonymous {
-			r += f.Name + ":"
+			r += getName(f) + ":"
 		}
 		if tag := f.Tag.Get("reflect"); tag != "" {
 			r += tag

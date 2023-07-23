@@ -13,14 +13,14 @@ type PrivStruct struct {
 	BigInt
 	Lolipop int64
 	Data    float32
-	T       time.Time
+	T       time.Time `cbor:"time"`
 }
 
 type TestStruct struct {
 	Lolipop float32
 	PrivStruct
-	Stuff int
-	Data  int
+	Stuff int `json:"stuff,omitempty"`
+	Data  int `json:",omitempty"`
 	//nolint:unused
 	thing string
 }
@@ -48,7 +48,7 @@ func TestModelReflect(t *testing.T) {
 	id = model.Hash()
 	// testStruct := &testStruct2{}
 	t.Logf("TestModelReflect: (%d) %s [%v]", id, model, err)
-	if id != 16467460592838678187 {
+	if id != 4637779922895058862 {
 		t.Error("test")
 	}
 }
