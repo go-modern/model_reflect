@@ -182,7 +182,6 @@ func structFields(t reflect.Type) ([]reflect.StructField, []error) {
 	result := []reflect.StructField{}
 	for i, level := range expand {
 		localCounts := map[string]int{}
-		localIgnore := map[string]bool{}
 		for _, f := range level {
 			name := getName(f)
 			counts[name]++
@@ -196,10 +195,11 @@ func structFields(t reflect.Type) ([]reflect.StructField, []error) {
 			if counts[name] == 1 {
 				result = append(result, f)
 			}
-			if !localIgnore[name] && localCounts[name] > 1 {
+		}
+		for name, count := range localCounts {
+			if count > 1 {
 				errs = append(errs, fmt.Errorf("type %s (embed level %d): %w [%d]%s",
-					t, i, ErrDuplicate, localCounts[name], name))
-				localIgnore[name] = true
+					t, i, ErrDuplicate, count, name))
 			}
 		}
 	}
@@ -281,7 +281,7 @@ func typeToString(t reflect.Type, types []reflect.Type, errs *[]error) string {
 	for i, name := range keys {
 		f := fieldMap[name]
 		if !f.Anonymous {
-			r += getName(f) + ":"
+			r += name + ":"
 		}
 		if tag := f.Tag.Get("reflect"); tag != "" {
 			r += tag
