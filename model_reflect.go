@@ -14,11 +14,14 @@ import (
 )
 
 type (
+	// ModelInfo contains information about a model.
 	ModelInfo struct {
 		string
 		Errs   []error
 		Hasher HashInfo
 	}
+
+	// HashInfo contains information about the hasher.
 	HashInfo struct {
 		Salt    []byte
 		Time    uint32
@@ -28,12 +31,14 @@ type (
 )
 
 var (
+	// DefaultHasher is the default hasher.
 	DefaultHasher = HashInfo{
 		Time:    1,
 		Memory:  8,
 		Threads: 1,
 	}
 
+	// DefaultInterfaces is the default list of interfaces to check.
 	DefaultInterfaces = []reflect.Type{
 		reflect.TypeOf((*encoding.BinaryMarshaler)(nil)).Elem(),
 		reflect.TypeOf((*encoding.BinaryUnmarshaler)(nil)).Elem(),
@@ -41,11 +46,15 @@ var (
 		reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem(),
 	}
 
+	// ErrLoopDetected is returned when a loop is detected.
 	ErrLoopDetected = errors.New("loop detected")
-	ErrEmptyStruct  = errors.New("empty struct")
-	ErrDuplicate    = errors.New("duplicate fields")
+	// ErrEmptyStruct is returned when a struct has no exported fields.
+	ErrEmptyStruct = errors.New("empty struct")
+	// ErrDuplicate is returned when a struct has duplicate fields.
+	ErrDuplicate = errors.New("duplicate fields")
 )
 
+// New returns a new ModelInfo.
 func New(v any) (m ModelInfo, err error) {
 	errs := []error{}
 	m = ModelInfo{Hasher: DefaultHasher}
@@ -58,6 +67,7 @@ func New(v any) (m ModelInfo, err error) {
 	return
 }
 
+// Hash returns a hash of the model.
 func (m ModelInfo) Hash() uint64 {
 	return binary.LittleEndian.Uint64(
 		argon2.IDKey(
@@ -70,6 +80,7 @@ func (m ModelInfo) Hash() uint64 {
 		))
 }
 
+// String returns a string representation of the model.
 func (m ModelInfo) String() string {
 	return m.string
 }

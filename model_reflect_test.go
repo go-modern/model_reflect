@@ -21,18 +21,21 @@ type TestStruct struct {
 	PrivStruct
 	Stuff int
 	Data  int
+	//nolint:unused
 	thing string
 }
 
 type testStruct2 struct {
+	//nolint:unused
 	string
 	Lolipop string
 	Func    func()
 	PrivStruct
 	*TestStruct
 	// Data   string
-	Wow    [2]struct{ Test float64 }
-	Derp   string `reflect:"-"`
+	Wow  [2]struct{ Test float64 }
+	Derp string `reflect:"-"`
+	//nolint:unused
 	thing2 string
 	Ok     *****map[****struct{ Dude byte }]****TestStruct
 }
